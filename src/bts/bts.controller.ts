@@ -1,4 +1,3 @@
-// src/bts/bts.controller.ts
 import {
   Controller,
   Post,
@@ -12,22 +11,14 @@ import {
 } from '@nestjs/common';
 import { BtsService } from './bts.service';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
+import { memoryStorage } from 'multer'; // ✅ Changed from diskStorage
 
 @Controller('bts')
 export class BtsController {
   constructor(private readonly service: BtsService) {}
 
   @Post()
-  @UseInterceptors(
-    FileInterceptor('video', {
-      storage: diskStorage({
-        destination: './uploads',
-        filename: (req, file, cb) =>
-          cb(null, `${Date.now()}-${file.originalname}`),
-      }),
-    }),
-  )
+  @UseInterceptors(FileInterceptor('video', { storage: memoryStorage() }))
   create(
     @Body() body: { caption: string; description: string },
     @UploadedFile() file: Express.Multer.File,
@@ -49,15 +40,7 @@ export class BtsController {
   }
 
   @Patch(':id/replace-video')
-  @UseInterceptors(
-    FileInterceptor('video', {
-      storage: diskStorage({
-        destination: './uploads',
-        filename: (req, file, cb) =>
-          cb(null, `${Date.now()}-${file.originalname}`),
-      }),
-    }),
-  )
+  @UseInterceptors(FileInterceptor('video', { storage: memoryStorage() }))
   replaceVideo(
     @Param('id') id: string,
     @UploadedFile() file: Express.Multer.File,
