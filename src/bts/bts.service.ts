@@ -6,6 +6,12 @@ import cloudinary from '../config/cloudinary';
 import { v4 as uuidv4 } from 'uuid';
 import { Readable } from 'stream';
 
+interface CloudinaryUploadResult {
+  public_id: string;
+  secure_url: string;
+  // add more if needed like duration, width, height etc.
+}
+
 function bufferToStream(buffer: Buffer): Readable {
   const stream = new Readable();
   stream.push(buffer);
@@ -19,7 +25,9 @@ export class BtsService {
     @InjectModel(BTSVideo.name) private model: Model<BTSVideoDocument>,
   ) {}
 
-  private async uploadToCloudinary(buffer: Buffer): Promise<any> {
+  private async uploadToCloudinary(
+    buffer: Buffer,
+  ): Promise<CloudinaryUploadResult> {
     return new Promise((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
         {
@@ -28,8 +36,17 @@ export class BtsService {
           public_id: uuidv4(),
         },
         (error, result) => {
-          if (result) resolve(result);
-          else reject(error);
+          if (error) {
+            return reject(new Error(error.message));
+          }
+          if (!result) {
+            return reject(new Error('Cloudinary upload failed'));
+          }
+
+          return resolve({
+            public_id: result.public_id,
+            secure_url: result.secure_url,
+          });
         },
       );
       bufferToStream(buffer).pipe(uploadStream);
@@ -56,6 +73,7 @@ export class BtsService {
   async update(id: string, data: { caption?: string; description?: string }) {
     const video = await this.model.findById(id);
     if (!video) throw new NotFoundException('BTS video not found');
+
     Object.assign(video, data);
     return video.save();
   }
@@ -93,8 +111,8 @@ export class BtsService {
     const video = await this.model.findById(id);
     if (!video) throw new NotFoundException('BTS video not found');
 
-    const allowed = ['smile', 'thumbsUp', 'heart', 'wow', 'sad'];
-    if (!allowed.includes(emoji)) {
+    const allowed = ['smile', 'thumbsUp', 'heart', 'wow', 'sad'] as const;
+    if (!allowed.includes(emoji as (typeof allowed)[number])) {
       throw new Error('Invalid emoji type');
     }
 

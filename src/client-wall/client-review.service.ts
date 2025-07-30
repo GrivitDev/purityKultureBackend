@@ -19,20 +19,30 @@ export class ClientReviewService {
     private uploadService: UploadService,
   ) {}
 
-  async createReview(dto: CreateReviewDto, files: Express.Multer.File[]): Promise<Review> {
+  async createReview(
+    dto: CreateReviewDto,
+    files: Express.Multer.File[],
+  ): Promise<Review> {
     const validMimeTypes = ['image/jpeg', 'image/png', 'video/mp4'];
     for (const file of files) {
       if (!validMimeTypes.includes(file.mimetype)) {
-        throw new BadRequestException(`Unsupported file type: ${file.originalname}`);
+        throw new BadRequestException(
+          `Unsupported file type: ${file.originalname}`,
+        );
       }
     }
 
-    const media = await this.uploadService.uploadMultiple(files, 'client-reviews');
+    const media = await this.uploadService.uploadMultiple(
+      files,
+      'client-reviews',
+    );
     const payload = { ...dto, media };
     return this.reviewModel.create(payload);
   }
 
-  async getReviews(filter: ReviewFilter): Promise<{ reviews: Review[]; total: number; page: number }> {
+  async getReviews(
+    filter: ReviewFilter,
+  ): Promise<{ reviews: Review[]; total: number; page: number }> {
     const { page, limit, style, rating } = filter;
 
     const query: FilterQuery<Review> = {};
@@ -54,18 +64,21 @@ export class ClientReviewService {
   }
 
   async likeReview(id: string): Promise<{ likes: number }> {
-    if (!isValidObjectId(id)) throw new BadRequestException('Invalid review ID');
+    if (!isValidObjectId(id))
+      throw new BadRequestException('Invalid review ID');
     const updated = await this.reviewModel.findByIdAndUpdate(
       id,
       { $inc: { likes: 1 } },
       { new: true },
     );
-    if (!updated) throw new BadRequestException('Review not found or could not be liked');
+    if (!updated)
+      throw new BadRequestException('Review not found or could not be liked');
     return { likes: updated.likes };
   }
 
   async delete(id: string): Promise<{ deleted: boolean }> {
-    if (!isValidObjectId(id)) throw new BadRequestException('Invalid review ID');
+    if (!isValidObjectId(id))
+      throw new BadRequestException('Invalid review ID');
     const found = await this.reviewModel.findById(id);
     if (!found) throw new BadRequestException('Review not found');
 
