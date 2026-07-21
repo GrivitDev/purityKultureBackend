@@ -6,7 +6,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.use(cookieParser());
   app.enableCors({
-    origin: 'https://purity-kulture.vercel.app/', // adjust to frontend URL
+    origin: 'https://purity-kulture.vercel.app', // adjust to frontend URL
     credentials: true,
   });
   await app.listen(process.env.PORT || 4000);
